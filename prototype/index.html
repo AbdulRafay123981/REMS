@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Urban Key - REMS Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Italiana&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css"></head><body>
+
+<header id="nav" class="hide">
+  <div class="logo" onclick="goHome()">Urban Key <i id="lk"></i></div>
+  <div id="mid"></div>
+  <div id="who" onclick="whoClick()">Visitor</div>
+</header>
+
+<!-- SCREEN: Welcome -->
+<section id="welcome" class="screen on">
+  <h3>Welcome to:</h3><h1>Urban Key</h1>
+  <button class="keybtn" onclick="auth('in')" id="kb" aria-label="Sign in or sign up"></button>
+  <p>Press Key to Sign In/Up</p>
+</section>
+
+<!-- SCREEN: Sign in / Sign up -->
+<section id="auth" class="screen">
+  <div class="authbg">
+    <div class="card" id="ac"></div>
+    <div class="welcometxt" id="wt"></div>
+  </div>
+</section>
+
+<!-- SCREEN: Customer home + property search -->
+<section id="home" class="screen">
+  <div class="hero">
+    <img class="himg" src="images/porch-house.jpg" alt="">
+    <input id="q" placeholder="Search by name or location" oninput="renderList()">
+    <h1>Find the Best<br>Properties</h1>
+  </div>
+  <div class="wrap">
+    <h2>Trending:</h2>
+    <div class="filters">
+      <select id="pmax" onchange="renderList()"><option value="0">Any price</option><option value="50000">Up to 50,000 $</option><option value="80000">Up to 80,000 $</option><option value="120000">Up to 120,000 $</option></select>
+      <select id="msz" onchange="renderList()"><option value="0">Any size</option><option value="5">5 Marla+</option><option value="10">10 Marla+</option></select>
+    </div>
+    <div class="grid" id="list"></div>
+  </div>
+  <div class="end">The End</div>
+</section>
+
+<!-- SCREEN: Property details -->
+<section id="detail" class="screen"></section>
+
+<!-- SCREEN: Agent - property management -->
+<section id="aprops" class="screen"><div class="wrap">
+  <div class="top"><h2>Property Management</h2><button onclick="propForm()">+ Add Property</button></div>
+  <table><thead><tr><th>Property</th><th>Location</th><th>Price</th><th>Marla</th><th>Actions</th></tr></thead><tbody id="ptb"></tbody></table>
+</div></section>
+
+<!-- SCREEN: Agent - visit management -->
+<section id="avis" class="screen"><div class="wrap">
+  <h2>Visit Management</h2>
+  <table><thead><tr><th>Property</th><th>Customer</th><th>Date</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead><tbody id="vtb"></tbody></table>
+</div></section>
+
+<div id="ov"><div id="mb"></div></div>
+<div id="toast"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body></html>

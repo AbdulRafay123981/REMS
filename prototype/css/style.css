@@ -1,0 +1,93 @@
+/* ===== 1. COLOURS & FONTS (from Figma palette) ===== */
+:root{--navy:#0f2a44;--white:#f8fafc;--blue:#1d4e6b;--teal:#2a9d8f;--gold:#e9c46a;--display:'Italiana',Georgia,serif}
+*{box-sizing:border-box}
+body{margin:0;font-family:Lato,Arial,sans-serif;background:var(--white);color:var(--navy)}
+button{font-family:inherit;cursor:pointer;border:0}
+.screen{display:none}.screen.on{display:block}
+/* ===== 2. NAVBAR ===== */
+header{background:var(--navy);height:64px;display:flex;align-items:center;justify-content:space-between;color:#fff}
+header.hide{display:none}
+.logo{background:var(--gold);color:var(--navy);font-family:var(--display);font-size:26px;height:100%;padding:0 22px;border-radius:0 0 34px 0;display:flex;align-items:center;gap:8px;cursor:pointer}
+.logo i{width:32px;height:32px;border:2px solid var(--navy);border-radius:50%;display:grid;place-items:center}
+.logo svg{width:20px}
+#mid{display:flex;gap:10px}
+.pill{border:1px solid #fff;background:transparent;color:#fff;border-radius:8px;padding:5px 16px;font-size:14px}
+.pill.act{background:var(--white);color:var(--navy)}
+#who{background:var(--gold);color:var(--navy);height:100%;padding:0 26px;border-radius:0 0 0 34px;display:flex;align-items:center;cursor:pointer;font-size:15px}
+/* ===== 3. WELCOME ===== */
+#welcome{text-align:center;padding:50px 20px;min-height:100vh;background:#fff}
+#welcome h3{margin:0;font-size:30px}
+#welcome h1{margin:0 0 30px;font:400 clamp(60px,10vw,110px) var(--display)}
+.keybtn{width:220px;height:220px;border-radius:50%;border:4px solid var(--navy);background:#fff;display:inline-grid;place-items:center;transition:.2s}
+.keybtn:hover{background:var(--gold)}
+.keybtn svg{width:120px}
+#welcome p{margin-top:22px;text-decoration:underline;font-weight:300}
+/* ===== 4. SIGN IN / SIGN UP ===== */
+.authbg{min-height:calc(100vh - 64px);position:relative;display:flex;align-items:center;gap:6%;padding:30px 5%;overflow:hidden}
+
+.authbg:before{content:'';position:absolute;inset:-20px;background:url('../images/glass-house.jpg') center/cover;filter:blur(7px)}
+.authbg>*{position:relative}
+.card{background:rgba(15,42,68,.88);border-radius:28px;padding:30px 36px;width:330px;text-align:center;color:#fff;box-shadow:4px 4px 10px rgba(0,0,0,.3)}
+.card h2{font:300 46px Lato;margin:0 0 20px}
+.card input{width:100%;border:0;border-radius:12px;padding:12px 14px;margin-bottom:18px;font:300 16px Lato}
+.card input.bad{outline:2px solid #e76f51}
+.gbtn{width:100%;background:var(--gold);color:var(--navy);font-size:22px;font-weight:300;padding:10px;border-radius:12px}
+.card a{display:block;margin-top:14px;font-size:17px;font-weight:300;cursor:pointer}
+.err{color:#ffb4a2;font-size:13px;min-height:18px;margin:-8px 0 8px}
+.hint{font-size:12px;opacity:.7;margin-top:12px}
+.welcometxt{font:400 clamp(50px,8vw,100px)/1.05 var(--display);color:#fff;max-width:520px}
+/* ===== 5. CUSTOMER HOME & SEARCH ===== */
+.hero{height:230px;background:linear-gradient(#a9bfd0,#dfe8ee);position:relative;overflow:hidden}
+.himg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 55%}
+.hero h1{font-weight:700;position:absolute;inset:0;margin:0;display:grid;place-items:center;text-align:center;font-size:46px;color:var(--navy);text-shadow:0 0 12px #fff}
+.hero input{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:min(420px,70%);border:1px solid #999;border-radius:16px;padding:6px 14px;z-index:2}
+.wrap{max-width:1100px;margin:auto;padding:24px 20px}
+.wrap h2{font-size:38px;text-decoration:underline;margin:0 0 6px}
+.filters{display:flex;gap:10px;margin:14px 0 20px}
+.filters select{padding:7px 12px;border-radius:10px;border:1px solid var(--navy);background:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:20px}
+.pc{display:flex;background:var(--navy);color:#fff;position:relative;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.25);min-height:150px}
+.pc .im{width:42%}
+.im img{width:100%;height:100%;display:block;object-fit:cover;object-position:center 62%}
+.pc .tx{padding:14px 18px;flex:1}
+.pc h4{margin:0;font-size:21px;font-weight:400}
+.pc .pr{font-size:26px;margin:4px 0}
+.tbtn{background:var(--teal);color:#fff;border-radius:14px;padding:5px 14px;margin-top:8px}
+.marla{position:absolute;right:0;bottom:0;background:var(--gold);color:var(--navy);width:62px;padding:6px 0;text-align:center;border-radius:14px 0 0 0;font-size:26px;line-height:1}
+.marla small{display:block;font-size:13px}
+.end{background:var(--navy);color:#fff;text-align:center;font-size:34px;padding:38px}
+/* ===== 6. PROPERTY DETAILS ===== */
+.gal{display:grid;grid-template-columns:1fr 1fr;height:260px;position:relative}
+.gal .gb{position:absolute;bottom:0;background:var(--gold);color:var(--navy);padding:2px 14px;font-size:18px}
+.dt{background:var(--navy);color:#fff;padding:14px 5%}
+.dt h1{margin:0;font-size:40px;font-weight:400}
+.dt p{margin:6px 0 0;font-size:13px;max-width:600px}
+.loc{background:var(--teal);color:#fff;font-size:26px;padding:12px 5%}
+.sq{display:flex;align-items:center;gap:26px;padding:14px 5%;font-size:24px}
+.sq .marla{position:static;border-radius:0;height:auto}
+.ag{background:var(--gold);display:flex;align-items:center;gap:14px;padding:8px 5%;font-weight:700}
+.ag span{flex:1}
+.ag button{background:var(--navy);color:#fff;padding:6px 26px;font-size:18px}
+.acts{display:flex;justify-content:space-between;padding:20px 5%;background:#fff}
+.acts button{background:var(--navy);color:#fff;font-size:24px;border-radius:24px;padding:8px 40px}
+/* ===== 7. AGENT TABLES ===== */
+table{width:100%;border-collapse:collapse;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+th{background:var(--navy);color:#fff;text-align:left;padding:10px}
+td{padding:10px;border-bottom:1px solid #dde4ea}
+.sm{border-radius:8px;padding:4px 10px;margin-right:4px;color:#fff;font-size:13px}
+.b-t{background:var(--teal)}.b-n{background:var(--blue)}.b-r{background:#c0503a}
+.st{padding:3px 10px;border-radius:10px;font-size:13px;background:var(--gold)}
+.st.Confirmed{background:var(--teal);color:#fff}.st.Cancelled{background:#c0503a;color:#fff}
+.top{display:flex;justify-content:space-between;align-items:center}
+.top button{background:var(--gold);color:var(--navy);padding:8px 18px;border-radius:14px;font-size:16px}
+/* ===== 8. MODAL & TOAST ===== */
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;place-items:center;z-index:9}
+#ov.on{display:grid}
+#mb{background:var(--navy);color:#fff;border-radius:22px;padding:26px;width:min(380px,92%)}
+#mb h3{margin:0 0 14px;font-size:26px;font-weight:400}
+#mb label{font-size:13px;display:block;margin-bottom:3px}
+#mb input,#mb select{width:100%;padding:9px;border-radius:10px;border:0;margin-bottom:12px}
+#mb .row{display:flex;gap:10px;justify-content:flex-end}
+#mb .row button{padding:8px 20px;border-radius:12px}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--teal);color:#fff;padding:11px 22px;border-radius:24px;display:none;z-index:10}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.authbg{flex-direction:column}.gal{height:170px}.hero h1{font-weight:700;font-size:32px}.logo{font-size:20px}}
