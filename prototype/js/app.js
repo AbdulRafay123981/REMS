@@ -89,8 +89,18 @@ function nav() {
   $("#who").textContent = user ? user.name : "Visitor";
   $("#who").title = user ? "" : "Browse as a visitor";
 }
-function whoClick() {
+
+async function whoClick() {
   if (user) {
+    try {
+      await fetch("http://127.0.0.1:5000/api/logout", {
+        method: "GET",
+        credentials: "include"
+      });
+    } catch (e) {
+      console.error("Logout request failed", e);
+    }
+
     user = null;
     sessionStorage.removeItem("user");
     show("welcome");
@@ -106,24 +116,49 @@ function auth(m) {
   mode = m;
   $("#ac").innerHTML =
     m === "in"
-      ? `<h2>Sign In</h2><input id="u" placeholder="User Name"><input id="p" type="password" placeholder="Password"><div class="err" id="ae"></div><button class="gbtn" onclick="signIn()">Sign In</button><a onclick="toast('Password reset is not part of the prototype')">Forgot Password</a><a onclick="auth('up')">Don't have an account?</a><div class="hint">Demo: customer / 1234 &nbsp;|&nbsp; agent / 1234</div>`
+      ? `<h2>Sign In</h2><input id="u" placeholder="Email Address"><input id="p" type="password" placeholder="Password"><div class="err" id="ae"></div><button class="gbtn" onclick="signIn()">Sign In</button><a onclick="toast('Password reset is not part of the prototype')">Forgot Password</a><a onclick="auth('up')">Don't have an account?</a><div class="hint">Demo: customer / 1234 &nbsp;|&nbsp; agent / 1234</div>`
       : `<h2>Sign Up</h2><input id="u" placeholder="Email"><input id="p" type="password" placeholder="Password"><div class="err" id="ae"></div><button class="gbtn" onclick="signUp()">Sign Up</button><a onclick="auth('in')">Already have an account?</a>`;
   $("#wt").innerHTML = m === "in" ? "Welcome<br>Back!" : "Join<br>Urban Key";
   show("auth");
 }
-function signIn() {
-  const u = $("#u").value.trim().toLowerCase(),
-    p = $("#p").value;
-  if (!u || !p)
-    return ($("#ae").textContent = "Enter your user name and password.");
-  const a = USERS[u];
-  if (!a || a.pw !== p)
-    return ($("#ae").textContent = "Wrong user name or password.");
-  user = a;
-  sv("user", a);
-  toast("Welcome, " + a.name);
-  goHome();
+
+
+async function signIn() {
+  const email = $("#u").value.trim();
+  const password = $("#p").value;
+  
+  if (!email || !password) {
+    return ($("#ae").textContent = "Enter your email and password.");
+  }
+
+  try {
+    const response = await fetch("http://127.0.0.1:5000/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      // credentials: "include" is important if you want Flask-Login cookies to persist
+      credentials: "include", 
+      body: JSON.stringify({ email: email, password: password })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Store user info in session storage for the UI to use
+      user = { name: data.name, role: data.role, email: email };
+      sv("user", user);
+      toast("Welcome, " + data.name);
+      goHome();
+    } else {
+      $("#ae").textContent = data.error || "Wrong email or password.";
+    }
+  } catch (error) {
+    $("#ae").textContent = "Failed to connect to the server.";
+    console.error("Login error:", error);
+  }
 }
+
 function signUp() {
   const u = $("#u").value.trim(),
     p = $("#p").value;
@@ -316,6 +351,28 @@ function resch(id) {
     },
     "Reschedule",
   );
+}
+
+
+async function fetchProtectedData() {
+  try {
+    const response = await fetch("http://127.0.0.1:5000/api/properties/manage", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include" // Sends the session cookie automatically
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      console.log(data.message);
+    } else {
+      alert("Access Denied: " + data.error);
+    }
+  } catch (err) {
+    console.error("Error:", err);
+  }
 }
 
 /* ===== I. START ===== */
