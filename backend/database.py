@@ -47,6 +47,7 @@ def get_user_by_email(email):
 
 
 VALID_ROLES = ("admin", "agent", "buyer", "owner")
+SELF_REGISTER_ROLES = ("buyer", "owner")
 
 def create_user(full_name, email, password, role):
     if role not in VALID_ROLES:

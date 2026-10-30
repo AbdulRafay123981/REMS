@@ -195,6 +195,17 @@ header.hide {
     font: 300 16px Lato
 }
 
+.card select {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  font: 300 16px Lato;
+  background: #fff;
+  color: var(--navy);
+}
+
 .card input.bad {
     outline: 2px solid #e76f51
 }

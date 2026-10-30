@@ -1,11 +1,12 @@
-from flask import Flask, jsonify, request
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from werkzeug.security import check_password_hash
-from functools import wraps
-import backend.database as db
+import re
 import sqlite3
-
+from functools import wraps
 from flask_cors import CORS
+import backend.database as db
+from flask import Flask, jsonify, request
+from werkzeug.security import check_password_hash
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True) # Enables cookies and cross-origin requests
@@ -67,6 +68,38 @@ def login():
         return jsonify({"message": "Logged in successfully", "role": user_obj.role, "name": user_obj.full_name})
     
     return jsonify({"error": "Invalid email or password"}), 401
+
+@app.route("/api/register", methods=["POST"])
+def register():
+    data = request.get_json(silent=True) or {}
+    full_name = (data.get("full_name") or "").strip()
+    email     = (data.get("email") or "").strip().lower()
+    password  = data.get("password") or ""
+    role      = (data.get("role") or "buyer").strip().lower()
+
+    if not full_name or not email or not password:
+        return jsonify({"error": "Full name, email, and password are required."}), 400
+    if len(full_name) < 2:
+        return jsonify({"error": "Please enter your full name."}), 400
+    if not re.match(r"^\S+@\S+\.\S+$", email):
+        return jsonify({"error": "Enter a valid email address."}), 400
+    if len(password) < 6:
+        return jsonify({"error": "Password needs at least 6 characters."}), 400
+    if role not in db.SELF_REGISTER_ROLES:
+        return jsonify({"error": "You can only register as a buyer or owner."}), 400
+
+    try:
+        ok = db.create_user(full_name, email, password, role)
+    except ValueError:
+        return jsonify({"error": "Invalid role."}), 400
+
+    if not ok:
+        return jsonify({"error": "An account with this email already exists."}), 409
+
+    return jsonify({"message": "Account created. Please sign in."}), 201
+
+
+
 
 @app.route("/api/logout")
 @login_required

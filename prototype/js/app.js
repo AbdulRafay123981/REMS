@@ -8,8 +8,8 @@ const ld = (k, d) => {
   }
 };
 const sv = (k, v) => (sessionStorage[k] = JSON.stringify(v));
-let P = ld("props", SEED),
-  V = ld("visits", SEEDV),
+let P = ld("props",[]),
+  V = ld("visits", []),
   user = ld("user", null),
   scr = "welcome",
   cur = null,
@@ -114,10 +114,27 @@ async function whoClick() {
 /* ===== E. LOGIN / SIGN UP ===== */
 function auth(m) {
   mode = m;
-  $("#ac").innerHTML =
-    m === "in"
-      ? `<h2>Sign In</h2><input id="u" placeholder="Email Address"><input id="p" type="password" placeholder="Password"><div class="err" id="ae"></div><button class="gbtn" onclick="signIn()">Sign In</button><a onclick="toast('Password reset is not part of the prototype')">Forgot Password</a><a onclick="auth('up')">Don't have an account?</a><div class="hint">Demo: customer / 1234 &nbsp;|&nbsp; agent / 1234</div>`
-      : `<h2>Sign Up</h2><input id="u" placeholder="Email"><input id="p" type="password" placeholder="Password"><div class="err" id="ae"></div><button class="gbtn" onclick="signUp()">Sign Up</button><a onclick="auth('in')">Already have an account?</a>`;
+  $("#ac").innerHTML = m === "in"
+    ? `<h2>Sign In</h2>
+       <input id="u" placeholder="Email Address">
+       <input id="p" type="password" placeholder="Password">
+       <div class="err" id="ae"></div>
+       <button class="gbtn" onclick="signIn()">Sign In</button>
+       <a onclick="toast('Password reset is not part of the prototype')">Forgot Password</a>
+       <a onclick="auth('up')">Don't have an account?</a>
+       <div class="hint">Demo: customer@rems.com / customer123 &nbsp;|&nbsp; agent@rems.com / agent123</div>`
+    : `<h2>Sign Up</h2>
+       <input id="n" placeholder="Full Name">
+       <input id="u" placeholder="Email Address">
+       <input id="p" type="password" placeholder="Password (min 6 chars)">
+       <input id="p2" type="password" placeholder="Confirm Password">
+       <select id="r">
+         <option value="buyer">I'm looking to buy / rent</option>
+         <option value="owner">I want to list my property</option>
+       </select>
+       <div class="err" id="ae"></div>
+       <button class="gbtn" onclick="signUp()">Sign Up</button>
+       <a onclick="auth('in')">Already have an account?</a>`;
   $("#wt").innerHTML = m === "in" ? "Welcome<br>Back!" : "Join<br>Urban Key";
   show("auth");
 }
@@ -159,15 +176,35 @@ async function signIn() {
   }
 }
 
-function signUp() {
-  const u = $("#u").value.trim(),
-    p = $("#p").value;
-  if (!/^\S+@\S+\.\S+$/.test(u))
-    return ($("#ae").textContent = "Enter a valid email address.");
-  if (p.length < 6)
-    return ($("#ae").textContent = "Password needs at least 6 characters.");
-  toast("Account created (demo). Please sign in.");
-  auth("in");
+async function signUp() {
+  const name     = $("#n").value.trim();
+  const email    = $("#u").value.trim();
+  const password = $("#p").value;
+  const confirm  = $("#p2").value;
+  const role     = $("#r").value;
+
+  if (!name)                                       return ($("#ae").textContent = "Enter your full name.");
+  if (!/^\S+@\S+\.\S+$/.test(email))               return ($("#ae").textContent = "Enter a valid email address.");
+  if (password.length < 6)                          return ($("#ae").textContent = "Password needs at least 6 characters.");
+  if (password !== confirm)                         return ($("#ae").textContent = "Passwords do not match.");
+
+  try {
+    const res = await fetch("http://127.0.0.1:5000/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ full_name: name, email, password, role }),
+    });
+    const data = await res.json();
+    if (!res.ok) return ($("#ae").textContent = data.error || "Registration failed.");
+
+    toast("Account created. Please sign in.");
+    auth("in");
+    setTimeout(() => { if ($("#u")) $("#u").value = email; }, 0);   // prefill email
+  } catch (err) {
+    $("#ae").textContent = "Failed to connect to the server.";
+    console.error("Register error:", err);
+  }
 }
 
 /* ===== F. CUSTOMER: SEARCH & DETAILS ===== */
