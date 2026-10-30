@@ -88,17 +88,44 @@ function show(s) {
   if (s === "home") renderList();
   if (s === "aprops") renderProps();
   if (s === "avis") renderVisits();
+  if (s === "admin_users") renderUsers();
 }
+
 function goHome() {
-  show(role() === "agent" ? "aprops" : "home");
+  const r = role();
+  if (r === "agent") return show("aprops");
+  if (r === "admin") return show("admin_users");
+  show("home");
 }
+
 function nav() {
   const a = role() === "agent";
-   $("#mid").innerHTML = a
-    ? `<button class="pill ${scr == "aprops" ? "act" : ""}" onclick="show('aprops')">Properties</button><button class="pill ${scr == "avis" ? "act" : ""}" onclick="show('avis')">Visits</button><button class="pill" onclick="whoClick()">Account</button>`
-    : user
-      ? `<button class="pill ${scr == "home" || scr == "detail" ? "act" : ""}" onclick="goHome()">Buy</button><button class="pill" onclick="toast('Sell is coming soon (not part of this prototype)')">Sell</button><button class="pill" onclick="myVisits()">My Visits</button><button class="pill" onclick="whoClick()">Account</button>`
-      : `<button class="pill ${scr == "auth" && mode == "in" ? "act" : ""}" onclick="auth('in')">Sign In</button><button class="pill ${scr == "auth" && mode == "up" ? "act" : ""}" onclick="auth('up')">Sign Up</button>`;
+  //  $("#mid").innerHTML = a
+  //   ? `<button class="pill ${scr == "aprops" ? "act" : ""}" onclick="show('aprops')">Properties</button><button class="pill ${scr == "avis" ? "act" : ""}" onclick="show('avis')">Visits</button><button class="pill" onclick="whoClick()">Account</button>`
+  //   : user
+  //     ? `<button class="pill ${scr == "home" || scr == "detail" ? "act" : ""}" onclick="goHome()">Buy</button><button class="pill" onclick="toast('Sell is coming soon (not part of this prototype)')">Sell</button><button class="pill" onclick="myVisits()">My Visits</button><button class="pill" onclick="whoClick()">Account</button>`
+  //     : `<button class="pill ${scr == "auth" && mode == "in" ? "act" : ""}" onclick="auth('in')">Sign In</button><button class="pill ${scr == "auth" && mode == "up" ? "act" : ""}" onclick="auth('up')">Sign Up</button>`;
+    const r = role();
+  if (r === "agent") {
+    $("#mid").innerHTML =
+      `<button class="pill ${scr == "aprops" ? "act" : ""}" onclick="show('aprops')">Properties</button>` +
+      `<button class="pill ${scr == "avis" ? "act" : ""}" onclick="show('avis')">Visits</button>` +
+      `<button class="pill" onclick="whoClick()">Account</button>`;
+  } else if (r === "admin") {
+    $("#mid").innerHTML =
+      `<button class="pill ${scr == "admin_users" ? "act" : ""}" onclick="show('admin_users')">Users</button>` +
+      `<button class="pill" onclick="whoClick()">Account</button>`;
+  } else if (user) {
+    $("#mid").innerHTML =
+      `<button class="pill ${scr == "home" || scr == "detail" ? "act" : ""}" onclick="goHome()">Buy</button>` +
+      `<button class="pill" onclick="toast('Sell is coming soon (not part of this prototype)')">Sell</button>` +
+      `<button class="pill" onclick="myVisits()">My Visits</button>` +
+      `<button class="pill" onclick="whoClick()">Account</button>`;
+  } else {
+    $("#mid").innerHTML =
+      `<button class="pill ${scr == "auth" && mode == "in" ? "act" : ""}" onclick="auth('in')">Sign In</button>` +
+      `<button class="pill ${scr == "auth" && mode == "up" ? "act" : ""}" onclick="auth('up')">Sign Up</button>`;
+  }
 }
 
 function whoClick() {
@@ -167,6 +194,132 @@ function changePasswordForm() {
       }
     },
     "Update Password"
+  );
+}
+
+/* ===== K. ADMIN: USER MANAGEMENT ===== */
+async function renderUsers() {
+  $("#utb").innerHTML = `<tr><td colspan="5">Loading…</td></tr>`;
+  try {
+    const res = await fetch("http://127.0.0.1:5000/api/users", {
+      credentials: "include",
+    });
+    if (!res.ok) {
+      $("#utb").innerHTML = `<tr><td colspan="5">Could not load users.</td></tr>`;
+      return;
+    }
+    const users = await res.json();
+    const roles = ["admin", "agent", "buyer", "owner"];
+
+    $("#utb").innerHTML = users.map((u) => {
+      const isSelf = user && (
+        (user.user_id && String(user.user_id) === String(u.user_id)) ||
+        (user.email && u.email && user.email.toLowerCase() === u.email.toLowerCase())
+      );
+
+      const roleCell = isSelf
+        ? `<b>${u.role}</b>`
+        : `<select onchange="adminSetRole(${u.user_id}, this.value)">` +
+          roles.map(r => `<option value="${r}" ${r === u.role ? "selected" : ""}>${r}</option>`).join("") +
+          `</select>`;
+
+      const statusBadge = u.is_active
+        ? `<span class="st Confirmed">Active</span>`
+        : `<span class="st Cancelled">Inactive</span>`;
+
+      const actionCell = isSelf
+        ? `<span style="opacity:.6">—</span>`
+        : u.is_active
+          ? `<button class="sm b-r" onclick="adminSetActive(${u.user_id}, false)">Deactivate</button>`
+          : `<button class="sm b-t" onclick="adminSetActive(${u.user_id}, true)">Activate</button>`;
+
+      return `<tr>
+        <td>${u.full_name}${isSelf ? " <em>(you)</em>" : ""}</td>
+        <td>${u.email}</td>
+        <td>${roleCell}</td>
+        <td>${statusBadge}</td>
+        <td>${actionCell}</td>
+      </tr>`;
+    }).join("");
+  } catch (e) {
+    console.error("renderUsers error", e);
+    $("#utb").innerHTML = `<tr><td colspan="5">Could not load users.</td></tr>`;
+  }
+}
+
+async function adminSetRole(userId, newRole) {
+  try {
+    const res = await fetch(`http://127.0.0.1:5000/api/users/${userId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ role: newRole }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      toast(data.error || "Update failed.");
+      renderUsers();          // revert the dropdown to server truth
+      return;
+    }
+    toast("Role updated");
+    renderUsers();
+  } catch (e) {
+    toast("Failed to connect to the server.");
+    renderUsers();
+  }
+}
+
+async function adminSetActive(userId, active) {
+  if (!active && !confirm("Deactivate this user? They will not be able to log in.")) return;
+  try {
+    const res = await fetch(`http://127.0.0.1:5000/api/users/${userId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ is_active: active }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      toast(data.error || "Update failed.");
+      return;
+    }
+    toast(active ? "User activated" : "User deactivated");
+    renderUsers();
+  } catch (e) {
+    toast("Failed to connect to the server.");
+  }
+}
+
+function adminUserForm() {
+  modal(
+    "Add User",
+    [
+      { k: "full_name", l: "Full name" },
+      { k: "email",     l: "Email", t: "email" },
+      { k: "password",  l: "Password (min 6 chars)", t: "password" },
+      { k: "role",      l: "Role", opts: ["buyer", "owner", "agent", "admin"] },
+    ],
+    async (v) => {
+      if (!v.full_name)                    return "Enter the user's full name.";
+      if (!/^\S+@\S+\.\S+$/.test(v.email)) return "Enter a valid email address.";
+      if (v.password.length < 6)           return "Password needs at least 6 characters.";
+
+      try {
+        const res = await fetch("http://127.0.0.1:5000/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(v),
+        });
+        const data = await res.json();
+        if (!res.ok) return data.error || "Could not create user.";
+        toast("User created");
+        renderUsers();
+      } catch (e) {
+        return "Failed to connect to the server.";
+      }
+    },
+    "Create User"
   );
 }
 
@@ -285,7 +438,7 @@ async function signIn() {
 
     if (response.ok) {
       // Store user info in session storage for the UI to use
-      user = { name: data.name, role: data.role, email: email };
+      user = { user_id: data.user_id, name: data.name, role: data.role, email: email };
       sv("user", user);
       toast("Welcome, " + data.name);
       goHome();

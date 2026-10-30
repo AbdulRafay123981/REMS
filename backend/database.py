@@ -62,7 +62,6 @@ def update_password(user_id, new_password):
     finally:
         connection.close()
 
-
 def create_reset_token(user_id):
     """Invalidate any old tokens for this user, issue a fresh one, return the token string."""
     token = secrets.token_urlsafe(32)
@@ -122,6 +121,70 @@ def create_user(full_name, email, password, role):
         return True
     except sqlite3.IntegrityError:
         return False          # email already exists
+    finally:
+        connection.close()
+
+# User roles change + admins
+
+def list_users():
+    connection = sqlite3.connect(DB_PATH)
+    connection.row_factory = sqlite3.Row
+    try:
+        cursor = connection.execute(
+            "SELECT user_id, full_name, email, role, is_active, created_at "
+            "FROM users ORDER BY user_id"
+        )
+        return [dict(r) for r in cursor.fetchall()]
+    finally:
+        connection.close()
+
+def get_user_by_id(user_id):
+    """Returns the row regardless of is_active — needed to reactivate."""
+    connection = sqlite3.connect(DB_PATH)
+    connection.row_factory = sqlite3.Row
+    try:
+        cursor = connection.execute(
+            "SELECT * FROM users WHERE user_id = ?", (user_id,)
+        )
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    finally:
+        connection.close()
+
+def update_user_role(user_id, new_role):
+    if new_role not in VALID_ROLES:
+        raise ValueError(f"Invalid role {new_role!r}; must be one of {VALID_ROLES}")
+    connection = sqlite3.connect(DB_PATH)
+    try:
+        connection.execute(
+            "UPDATE users SET role = ? WHERE user_id = ?", (new_role, user_id)
+        )
+        connection.commit()
+        return True
+    finally:
+        connection.close()
+
+def set_user_active(user_id, active):
+    connection = sqlite3.connect(DB_PATH)
+    try:
+        connection.execute(
+            "UPDATE users SET is_active = ? WHERE user_id = ?",
+            (1 if active else 0, user_id),
+        )
+        connection.commit()
+        return True
+    finally:
+        connection.close()
+
+def count_active_admins(exclude_user_id=None):
+    connection = sqlite3.connect(DB_PATH)
+    try:
+        sql = "SELECT COUNT(*) FROM users WHERE role = 'admin' AND is_active = 1"
+        args = ()
+        if exclude_user_id is not None:
+            sql += " AND user_id != ?"
+            args = (exclude_user_id,)
+        return connection.execute(sql, args).fetchone()[0]
     finally:
         connection.close()
 
