@@ -51,12 +51,25 @@ function modal(title, fields, ok, okLabel) {
       .join("") +
     `<div class="err" id="me"></div><div class="row"><button onclick="closeM()">Cancel</button><button style="background:var(--gold);color:var(--navy)" id="mok">${okLabel || "Save"}</button></div>`;
   $("#ov").classList.add("on");
-  $("#mok").onclick = () => {
+   $("#mok").onclick = async () => {
+    const btn = $("#mok");
+    if (btn.disabled) return;
+    btn.disabled = true;
+
     const v = {};
-    fields.forEach((f) => (v[f.k] = $("#f_" + f.k).value.trim()));
-    const e = ok(v);
-    if (e) $("#me").textContent = e;
-    else closeM();
+    fields.forEach((f) => {
+      const raw = $("#f_" + f.k).value;
+      // don't trim password fields — spaces can be meaningful
+      v[f.k] = f.t === "password" ? raw : raw.trim();
+    });
+
+    const e = await ok(v);
+    if (e) {
+      $("#me").textContent = e;
+      btn.disabled = false;
+    } else {
+      closeM();
+    }
   };
 }
 function closeM() {
@@ -81,34 +94,143 @@ function goHome() {
 }
 function nav() {
   const a = role() === "agent";
-  $("#mid").innerHTML = a
-    ? `<button class="pill ${scr == "aprops" ? "act" : ""}" onclick="show('aprops')">Properties</button><button class="pill ${scr == "avis" ? "act" : ""}" onclick="show('avis')">Visits</button><button class="pill" onclick="whoClick()">Log Out</button>`
+   $("#mid").innerHTML = a
+    ? `<button class="pill ${scr == "aprops" ? "act" : ""}" onclick="show('aprops')">Properties</button><button class="pill ${scr == "avis" ? "act" : ""}" onclick="show('avis')">Visits</button><button class="pill" onclick="whoClick()">Account</button>`
     : user
-      ? `<button class="pill ${scr == "home" || scr == "detail" ? "act" : ""}" onclick="goHome()">Buy</button><button class="pill" onclick="toast('Sell is coming soon (not part of this prototype)')">Sell</button><button class="pill" onclick="myVisits()">My Visits</button><button class="pill" onclick="whoClick()">Log Out</button>`
+      ? `<button class="pill ${scr == "home" || scr == "detail" ? "act" : ""}" onclick="goHome()">Buy</button><button class="pill" onclick="toast('Sell is coming soon (not part of this prototype)')">Sell</button><button class="pill" onclick="myVisits()">My Visits</button><button class="pill" onclick="whoClick()">Account</button>`
       : `<button class="pill ${scr == "auth" && mode == "in" ? "act" : ""}" onclick="auth('in')">Sign In</button><button class="pill ${scr == "auth" && mode == "up" ? "act" : ""}" onclick="auth('up')">Sign Up</button>`;
-  $("#who").textContent = user ? user.name : "Visitor";
-  $("#who").title = user ? "" : "Browse as a visitor";
 }
 
-async function whoClick() {
-  if (user) {
-    try {
-      await fetch("http://127.0.0.1:5000/api/logout", {
-        method: "GET",
-        credentials: "include"
-      });
-    } catch (e) {
-      console.error("Logout request failed", e);
-    }
-
-    user = null;
-    sessionStorage.removeItem("user");
-    show("welcome");
-    toast("You have been logged out");
-  } else {
+function whoClick() {
+  if (!user) {
     toast("Browsing as a visitor");
     show("home");
+    return;
   }
+  $("#mb").innerHTML = `
+    <h3>${user.name}</h3>
+    <p style="margin:-8px 0 18px;opacity:.7;font-size:13px">${user.email || ""}</p>
+    <div class="row" style="flex-direction:column;align-items:stretch;gap:10px">
+      <button style="background:var(--gold);color:var(--navy)" onclick="changePasswordForm()">Change Password</button>
+      <button style="background:#c0503a;color:#fff" onclick="logout()">Log Out</button>
+      <button onclick="closeM()">Cancel</button>
+    </div>`;
+  $("#ov").classList.add("on");
+}
+
+async function logout() {
+  try {
+    await fetch("http://127.0.0.1:5000/api/logout", {
+      method: "GET",
+      credentials: "include",
+    });
+  } catch (e) {
+    console.error("Logout request failed", e);
+  }
+  user = null;
+  sessionStorage.removeItem("user");
+  closeM();
+  show("welcome");
+  toast("You have been logged out");
+}
+
+function changePasswordForm() {
+  modal(
+    "Change Password",
+    [
+      { k: "current", l: "Current password",          t: "password" },
+      { k: "next",    l: "New password (min 6 chars)", t: "password" },
+      { k: "confirm", l: "Confirm new password",      t: "password" },
+    ],
+    async (v) => {
+      if (!v.current)           return "Enter your current password.";
+      if (v.next.length < 6)    return "New password needs at least 6 characters.";
+      if (v.next !== v.confirm) return "New passwords do not match.";
+      if (v.next === v.current) return "New password must be different.";
+
+      try {
+        const res = await fetch("http://127.0.0.1:5000/api/change-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            current_password: v.current,
+            new_password: v.next,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) return data.error || "Could not change password.";
+        toast("Password updated successfully");
+        return;   // undefined → modal closes
+      } catch (e) {
+        return "Failed to connect to the server.";
+      }
+    },
+    "Update Password"
+  );
+}
+
+function forgotPasswordForm() {
+  modal(
+    "Forgot Password",
+    [{ k: "email", l: "Account email", t: "email" }],
+    async (v) => {
+      if (!/^\S+@\S+\.\S+$/.test(v.email))
+        return "Enter a valid email address.";
+
+      try {
+        const res = await fetch("http://127.0.0.1:5000/api/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email: v.email }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          return data.error || "Could not request a reset.";
+        }
+        toast("Check the Flask terminal for your reset token.");
+        setTimeout(openResetPasswordModal, 300);   // auto-advance to paste step
+        return;
+      } catch (e) {
+        return "Failed to connect to the server.";
+      }
+    },
+    "Send Reset Token"
+  );
+}
+
+function openResetPasswordModal(presetToken) {
+  modal(
+    "Reset Password",
+    [
+      { k: "token",   l: "Reset token",                 v: presetToken || "" },
+      { k: "next",    l: "New password (min 6 chars)", t: "password" },
+      { k: "confirm", l: "Confirm new password",       t: "password" },
+    ],
+    async (v) => {
+      if (!v.token)             return "Paste the token from the Flask terminal.";
+      if (v.next.length < 6)    return "New password needs at least 6 characters.";
+      if (v.next !== v.confirm) return "New passwords do not match.";
+
+      try {
+        const res = await fetch("http://127.0.0.1:5000/api/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ token: v.token, new_password: v.next }),
+        });
+        const data = await res.json();
+        if (!res.ok) return data.error || "Could not reset password.";
+        toast("Password reset. Please sign in.");
+        auth("in");
+        return;
+      } catch (e) {
+        return "Failed to connect to the server.";
+      }
+    },
+    "Reset Password"
+  );
 }
 
 /* ===== E. LOGIN / SIGN UP ===== */
@@ -120,7 +242,7 @@ function auth(m) {
        <input id="p" type="password" placeholder="Password">
        <div class="err" id="ae"></div>
        <button class="gbtn" onclick="signIn()">Sign In</button>
-       <a onclick="toast('Password reset is not part of the prototype')">Forgot Password</a>
+       <a onclick="forgotPasswordForm()">Forgot Password</a>
        <a onclick="auth('up')">Don't have an account?</a>
        <div class="hint">Demo: customer@rems.com / customer123 &nbsp;|&nbsp; agent@rems.com / agent123</div>`
     : `<h2>Sign Up</h2>
@@ -412,6 +534,40 @@ async function fetchProtectedData() {
   }
 }
 
+/* ===== I. SESSION SYNC ===== */
+async function syncSession() {
+  try {
+    const res = await fetch("http://127.0.0.1:5000/api/me", {
+      credentials: "include"
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      user = { name: data.name, role: data.role, email: data.email };
+      sv("user", user);
+      nav();
+      // Only auto-navigate if the user hasn't interacted yet (initial load)
+      if (scr === "welcome") goHome();
+    } else {
+      // 401 — cookie expired or user deactivated: drop stale local state
+      user = null;
+      sessionStorage.removeItem("user");
+      nav();
+    }
+  } catch (e) {
+    // Backend unreachable — stay with whatever sessionStorage has
+    console.error("Session sync failed:", e);
+  }
+}
+
 /* ===== I. START ===== */
 $("#kb").innerHTML = KEY("#0f2a44");
 $("#lk").innerHTML = KEY("#0f2a44");
+syncSession();
+// If the Flask console printed a reset link and the user opened it,
+// pre-fill the token automatically.
+const resetToken = new URLSearchParams(location.search).get("reset");
+if (resetToken) {
+  history.replaceState({}, "", location.pathname);  // strip token from URL bar
+  openResetPasswordModal(resetToken);
+}

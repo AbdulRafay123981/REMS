@@ -1,4 +1,5 @@
 import re
+import os   
 import sqlite3
 from functools import wraps
 from flask_cors import CORS
@@ -11,6 +12,11 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 app = Flask(__name__)
 CORS(app, supports_credentials=True) # Enables cookies and cross-origin requests
 app.secret_key = "your-secret-key-here"  # Needed for session management
+
+PROTOTYPE_URL = os.environ.get(
+    "PROTOTYPE_URL",
+    "http://127.0.0.1:5500/prototype/index.html",   # Live Server default
+)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -28,10 +34,12 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    # Helper to load user by ID for sessions
     connection = sqlite3.connect(db.DB_PATH)
     connection.row_factory = sqlite3.Row
-    cursor = connection.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
+    cursor = connection.execute(
+        "SELECT * FROM users WHERE user_id = ? AND is_active = 1",
+        (user_id,)
+    )
     row = cursor.fetchone()
     connection.close()
     return User(row) if row else None
@@ -53,7 +61,7 @@ def role_required(*allowed_roles):
 
 @app.route("/")
 def home():
-    return "Welcome to REMS API"
+    return f"Welcome to REMS API — prototype is expected at {PROTOTYPE_URL}"
 
 @app.route("/api/login", methods=["POST"])
 def login():
@@ -98,14 +106,97 @@ def register():
 
     return jsonify({"message": "Account created. Please sign in."}), 201
 
-
-
-
 @app.route("/api/logout")
 @login_required
 def logout():
     logout_user()
     return jsonify({"message": "Logged out successfully"})
+
+@app.route("/api/me")
+def me():
+    if not current_user.is_authenticated:
+        return jsonify({"error": "Not authenticated"}), 401
+    return jsonify({
+        "user_id": current_user.id,
+        "email":   current_user.email,
+        "name":    current_user.full_name,
+        "role":    current_user.role,
+    })
+    
+@app.route("/api/change-password", methods=["POST"])
+def change_password():
+    if not current_user.is_authenticated:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    data = request.get_json(silent=True) or {}
+    current = data.get("current_password") or ""
+    new     = data.get("new_password") or ""
+
+    if not current or not new:
+        return jsonify({"error": "Both current and new passwords are required."}), 400
+    if len(new) < 6:
+        return jsonify({"error": "New password needs at least 6 characters."}), 400
+    if current == new:
+        return jsonify({"error": "New password must be different from the current one."}), 400
+
+    # current_user doesn't carry the hash — re-fetch to verify
+    user_data = db.get_user_by_email(current_user.email)
+    if not user_data or not check_password_hash(user_data["password_hash"], current):
+        return jsonify({"error": "Current password is incorrect."}), 401
+
+    db.update_password(current_user.id, new)
+    return jsonify({"message": "Password updated successfully."})
+
+@app.route("/api/forgot-password", methods=["POST"])
+def forgot_password():
+    data  = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+
+    if not email:
+        return jsonify({"error": "Enter your email address."}), 400
+
+    user_data = db.get_user_by_email(email)
+
+    # Always return the same response — prevents user enumeration.
+    generic = jsonify({
+        "message": "If that email exists, a reset token has been sent."
+    })
+
+    if not user_data:
+        app.logger.info("Forgot-password requested for unknown email: %s", email)
+        return generic, 200
+
+    token = db.create_reset_token(user_data["user_id"])
+    app.logger.info("Password reset token issued for %s", email)
+
+    # Stubbed "email": print to Flask console.
+    print("\n" + "=" * 60)
+    print(f"PASSWORD RESET for {email}")
+    print(f"  Token: {token}")
+    print(f"  Link:  {PROTOTYPE_URL}?reset={token}")
+    print("  Expires in 15 minutes. Single use.")
+    print("=" * 60 + "\n")
+
+    return generic, 200
+
+@app.route("/api/reset-password", methods=["POST"])
+def reset_password():
+    data = request.get_json(silent=True) or {}
+    token = (data.get("token") or "").strip()
+    new   = data.get("new_password") or ""
+
+    if not token or not new:
+        return jsonify({"error": "Token and new password are required."}), 400
+    if len(new) < 6:
+        return jsonify({"error": "New password needs at least 6 characters."}), 400
+
+    user_id = db.consume_reset_token(token)
+    if user_id is None:
+        return jsonify({"error": "Invalid or expired reset token."}), 400
+
+    db.update_password(user_id, new)
+    app.logger.info("Password reset completed for user_id=%s", user_id)
+    return jsonify({"message": "Password reset successfully. Please sign in."})
 
 # Example of a Public Endpoint
 @app.route("/api/properties")

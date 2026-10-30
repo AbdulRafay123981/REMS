@@ -57,3 +57,13 @@ CREATE TABLE IF NOT EXISTS visits (
     FOREIGN KEY (property_id) REFERENCES properties(property_id),
     FOREIGN KEY (client_id) REFERENCES users(user_id)
 );
+
+CREATE TABLE IF NOT EXISTS password_resets (
+    token      TEXT PRIMARY KEY,
+    user_id    INTEGER NOT NULL,
+    expires_at TEXT NOT NULL,
+    used       INTEGER NOT NULL DEFAULT 0 CHECK (used IN (0, 1)),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
