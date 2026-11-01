@@ -53,6 +53,37 @@ def fetch_property(property_id):
         connection.close()
 
 
+def insert_property(data):
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            """
+            INSERT INTO properties (
+                owner_id, title, property_type, listing_type,
+                price, price_period, address, city
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                data["owner_id"],
+                data["title"],
+                data["property_type"],
+                data["listing_type"],
+                data["price"],
+                data.get("price_period"),
+                data["address"],
+                data["city"],
+            ),
+        )
+
+        connection.commit()
+        return cursor.lastrowid
+
+    finally:
+        connection.close()
+
+
 if __name__ == "__main__":
     db_init()
     print(fetch_table("properties"))

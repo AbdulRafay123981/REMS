@@ -1,3 +1,5 @@
+import sqlite3
+
 import backend.database as db
 from flask import jsonify, request
 
@@ -82,5 +84,15 @@ def create_property():
         or data["price"] < 0
     ):
         return jsonify({"error": "Price must be a non-negative number"}), 400
+    try:
+        property_id = db.insert_property(data)
 
-    return data
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "Invalid owner ID or property data"}), 400
+
+    except sqlite3.Error:
+        return jsonify({"error": "Database operation failed"}), 500
+
+    new_property = db.fetch_property(property_id)
+
+    return jsonify(new_property), 201
