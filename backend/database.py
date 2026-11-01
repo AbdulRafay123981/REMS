@@ -53,6 +53,44 @@ def fetch_property(property_id):
         connection.close()
 
 
+def search_properties(filters):
+    query = "SELECT * FROM properties"
+    conditions = []
+    values = []
+
+    if filters.get("city"):
+        conditions.append("city LIKE ?")
+        values.append(f"%{filters['city']}%")
+
+    if filters.get("property_type"):
+        conditions.append("property_type = ?")
+        values.append(filters["property_type"])
+
+    if filters.get("listing_type"):
+        conditions.append("listing_type = ?")
+        values.append(filters["listing_type"])
+
+    if filters.get("min_price") is not None:
+        conditions.append("price >= ?")
+        values.append(filters["min_price"])
+
+    if filters.get("max_price") is not None:
+        conditions.append("price <= ?")
+        values.append(filters["max_price"])
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+
+    try:
+        cursor = connection.execute(query, values)
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        connection.close()
+
+
 def insert_property(data):
     connection = get_connection()
 

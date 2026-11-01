@@ -8,7 +8,51 @@ from . import bp
 
 @bp.route("/properties")
 def get_properties():
-    properties = db.fetch_table("properties")
+    filters = {}
+
+    city = request.args.get("city")
+    property_type = request.args.get("property_type")
+    listing_type = request.args.get("listing_type")
+    min_price = request.args.get("min_price")
+    max_price = request.args.get("max_price")
+
+    if property_type and property_type not in (
+        "residential",
+        "commercial",
+        "industrial",
+        "land",
+        "other",
+    ):
+        return jsonify({"error": "Unknown property type"}), 400
+
+    if listing_type and listing_type not in ("sale", "rent"):
+        return jsonify({"error": "Unknown listing type"}), 400
+
+    try:
+        if min_price is not None:
+            filters["min_price"] = float(min_price)
+
+        if max_price is not None:
+            filters["max_price"] = float(max_price)
+    except ValueError:
+        return jsonify({"error": "Invalid price filter"}), 400
+
+    if filters.get("min_price", 0) < 0 or filters.get("max_price", 0) < 0:
+        return jsonify({"error": "Prices cannot be negative"}), 400
+
+    if (
+        "min_price" in filters
+        and "max_price" in filters
+        and filters["min_price"] > filters["max_price"]
+    ):
+        return jsonify({"error": "Minimum price exceeds maximum price"}), 400
+
+    filters["city"] = city
+    filters["property_type"] = property_type
+    filters["listing_type"] = listing_type
+
+    properties = db.search_properties(filters)
+
     return jsonify(properties)
 
 
