@@ -84,6 +84,56 @@ def insert_property(data):
         connection.close()
 
 
+def update_property(property_id, data):
+    allowed_fields = (
+        "title",
+        "description",
+        "property_type",
+        "listing_type",
+        "price",
+        "price_period",
+        "area_marla",
+        "area_sqft",
+        "bedrooms",
+        "bathrooms",
+        "address",
+        "area",
+        "city",
+        "province",
+        "postal_code",
+        "latitude",
+        "longitude",
+    )
+
+    fields = [field for field in data if field in allowed_fields]
+
+    if not fields:
+        return False
+
+    set_clause = ", ".join(f"{field} = ?" for field in fields)
+
+    values = [data[field] for field in fields]
+    values.extend([property_id])
+
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            f"""
+            UPDATE properties
+            SET {set_clause}, updated_at = CURRENT_TIMESTAMP
+            WHERE property_id = ?
+            """,
+            values,
+        )
+
+        connection.commit()
+        return cursor.rowcount > 0
+
+    finally:
+        connection.close()
+
+
 if __name__ == "__main__":
     db_init()
     print(fetch_table("properties"))

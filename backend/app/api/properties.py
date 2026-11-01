@@ -96,3 +96,124 @@ def create_property():
     new_property = db.fetch_property(property_id)
 
     return jsonify(new_property), 201
+
+
+@bp.route("/properties/<int:property_id>", methods=["PATCH"])
+def update_property(property_id):
+    allowed_fields = {
+        "title",
+        "description",
+        "property_type",
+        "listing_type",
+        "price",
+        "price_period",
+        "area_marla",
+        "area_sqft",
+        "bedrooms",
+        "bathrooms",
+        "address",
+        "area",
+        "city",
+        "province",
+        "postal_code",
+        "latitude",
+        "longitude",
+    }
+
+    property = db.fetch_property(property_id)
+
+    if property is None:
+        return jsonify({"error": "Property not found"}), 404
+
+    data = request.get_json()
+
+    if data is None:
+        return jsonify({"error": "Missing JSON"}), 400
+
+    if not isinstance(data, dict):
+        return jsonify({"error": "JSON body must be an object"}), 400
+
+    if not data:
+        return jsonify({"error": "No fields provided"}), 400
+
+    unknown_fields = set(data) - allowed_fields
+
+    if unknown_fields:
+        return jsonify(
+            {
+                "error": "Unknown fields",
+                "fields": list(unknown_fields),
+            }
+        ), 400
+
+    updated_data = {**property, **data}
+
+    if updated_data["property_type"] not in (
+        "residential",
+        "commercial",
+        "industrial",
+        "land",
+        "other",
+    ):
+        return jsonify({"error": "Unknown property type"}), 400
+
+    if updated_data["listing_type"] not in ("sale", "rent"):
+        return jsonify({"error": "Unknown listing type"}), 400
+
+    if updated_data["listing_type"] == "rent":
+        if updated_data.get("price_period") not in (
+            "daily",
+            "weekly",
+            "monthly",
+            "yearly",
+        ):
+            return jsonify({"error": "Invalid or missing price period"}), 400
+    elif updated_data.get("price_period") is not None:
+        return jsonify({"error": "Sale properties cannot have a price period"}), 400
+
+    for field in ("title", "address", "city"):
+        if field in data:
+            if not isinstance(data[field], str) or not data[field].strip():
+                return jsonify({"error": f"Invalid {field}"}), 400
+
+    if "price" in data:
+        if (
+            isinstance(data["price"], bool)
+            or not isinstance(data["price"], (int, float))
+            or data["price"] < 0
+        ):
+            return jsonify({"error": "Price must be a non-negative number"}), 400
+
+    for field in ("area_marla", "area_sqft"):
+        if field in data and data[field] is not None:
+            if (
+                isinstance(data[field], bool)
+                or not isinstance(data[field], (int, float))
+                or data[field] <= 0
+            ):
+                return jsonify({"error": f"Invalid {field}"}), 400
+
+    for field in ("bedrooms", "bathrooms"):
+        if field in data and data[field] is not None:
+            if (
+                isinstance(data[field], bool)
+                or not isinstance(data[field], int)
+                or data[field] < 0
+            ):
+                return jsonify({"error": f"Invalid {field}"}), 400
+
+    try:
+        success = db.update_property(property_id, data)
+
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "Invalid property data"}), 400
+
+    except sqlite3.Error:
+        return jsonify({"error": "Database operation failed"}), 500
+
+    if not success:
+        return jsonify({"error": "Property not found"}), 404
+
+    updated_property = db.fetch_property(property_id)
+
+    return jsonify(updated_property), 200
