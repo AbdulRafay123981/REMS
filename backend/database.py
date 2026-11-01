@@ -8,8 +8,14 @@ SCHEMA_PATH = BASE_PATH / "database" / "schema.sql"
 schema = SCHEMA_PATH.read_text()
 
 
-def db_init():
+def get_connection():
     connection = sqlite3.connect(DB_PATH)
+    connection.execute("PRAGMA foreign_keys = ON")
+    return connection
+
+
+def db_init():
+    connection = get_connection()
     try:
         connection.executescript(schema)
     finally:
@@ -17,7 +23,7 @@ def db_init():
 
 
 def fetch_table(table_name):
-    connection = sqlite3.connect(DB_PATH)
+    connection = get_connection()
     connection.row_factory = sqlite3.Row
 
     try:
@@ -34,7 +40,7 @@ def fetch_table(table_name):
 
 
 def fetch_property(property_id):
-    connection = sqlite3.connect(DB_PATH)
+    connection = get_connection()
     connection.row_factory = sqlite3.Row
     try:
         cursor = connection.execute(
