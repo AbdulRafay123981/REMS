@@ -8,7 +8,7 @@ const ld = (k, d) => {
   }
 };
 const sv = (k, v) => (sessionStorage[k] = JSON.stringify(v));
-let P = ld("props", SEED),
+let P = [],
   V = ld("visits", SEEDV),
   user = ld("user", null),
   scr = "welcome",
@@ -61,6 +61,39 @@ function modal(title, fields, ok, okLabel) {
 }
 function closeM() {
   $("#ov").classList.remove("on");
+}
+
+function normalizeProperty(p) {
+  return {
+    id: p.property_id,
+    title: p.title,
+    img: IMAGES.gallery[0],
+    price: p.price,
+    loc: [p.area, p.city].filter(Boolean).join(", ") || p.address,
+    marla: p.area_marla,
+    sqft: p.area_sqft || 0,
+    agent: `Owner #${p.owner_id}`,
+  };
+}
+
+async function loadProperties() {
+  try {
+    const response = await fetch("/api/properties");
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const properties = await response.json();
+
+    P = properties.map(normalizeProperty);
+
+    if (scr === "home") renderList();
+    if (scr === "aprops") renderProps();
+  } catch (error) {
+    console.error("Property loading failed:", error);
+    toast("Could not load properties from the server.");
+  }
 }
 
 /* ===== D. NAVIGATION ===== */
@@ -144,7 +177,7 @@ function renderList() {
     (p) =>
       (p.title + p.loc).toLowerCase().includes(q) &&
       (!pm || p.price <= pm) &&
-      p.marla >= ms,
+      (p.marla == null || p.marla >= ms),
   );
   $("#list").innerHTML = r.length
     ? r
@@ -321,3 +354,5 @@ function resch(id) {
 /* ===== I. START ===== */
 $("#kb").innerHTML = KEY("#0f2a44");
 $("#lk").innerHTML = KEY("#0f2a44");
+
+loadProperties();
