@@ -32,7 +32,11 @@ function toast(m) {
   clearTimeout(t.h);
   t.h = setTimeout(() => (t.style.display = "none"), 2600);
 }
-const money = (n) => Number(n).toLocaleString() + " $";
+
+const money = (n) => "Rs. " + Number(n).toLocaleString("en-PK");
+
+const areaLabel = (n) => (n == null ? "Area not specified" : `${n} Marla`);
+
 const pname = (id) =>
   (P.find((p) => p.id == id) || { title: "(deleted)" }).title;
 
@@ -69,7 +73,7 @@ function normalizeProperty(p) {
     title: p.title,
     img: IMAGES.gallery[0],
     price: p.price,
-    loc: [p.area, p.city].filter(Boolean).join(", ") || p.address,
+    loc: [p.address, p.area, p.city].filter(Boolean).join(", "),
     marla: p.area_marla,
     sqft: p.area_sqft || 0,
     agent: `Owner #${p.owner_id}`,
@@ -183,7 +187,7 @@ function renderList() {
     ? r
         .map(
           (p) =>
-            `<div class="pc" onclick="det(${p.id})"><div class="im">${pic(p.img || IMAGES.gallery[0])}</div><div class="tx"><h4>${p.title}</h4><div class="pr">${money(p.price)}</div><div>${p.loc}</div><button class="tbtn" onclick="event.stopPropagation();toast('Message sent to ${p.agent} (prototype)')">Contact Agent</button></div><div class="marla">${p.marla}<small>Marla</small></div></div>`,
+            `<div class="pc" onclick="det(${p.id})"><div class="im">${pic(p.img || IMAGES.gallery[0])}</div><div class="tx"><h4>${p.title}</h4><div class="pr">${money(p.price)}</div><div>${p.loc}</div><button class="tbtn" onclick="event.stopPropagation();toast('Message sent to ${p.agent} (prototype)')">Contact Agent</button></div><div class="marla">${p.marla == null ? "—" : p.marla}<small>${p.marla == null ? "Area not specified" : "Marla"}</small></div></div>`,
         )
         .join("")
     : "<p>No properties match your search. Try a different name or price.</p>";
@@ -197,7 +201,7 @@ function det(id, g) {
     `<div class="gal"><div class="im">${pic(L[gi])}</div><div class="im">${pic(L[(gi + 1) % L.length])}</div><button class="gb" style="left:0" onclick="det(${id},${gi - 1})">&larr; Back</button><button class="gb" style="right:0" onclick="det(${id},${gi + 1})">Next &rarr;</button></div>
   <div class="dt"><h1>${p.title}</h1><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Spacious rooms, natural light and a quiet neighbourhood close to schools and markets.</p></div>
   <div class="loc">${p.loc}</div>
-  <div class="sq"><div class="marla">${p.marla}<small>Marla</small></div><div>${p.sqft} square feet &nbsp; | &nbsp; ${money(p.price)}</div></div>
+  <div class="sq"><div class="marla">${p.marla == null ? "—" : p.marla}<small>${p.marla == null ? "Area not specified" : "Marla"}</small></div><div>${p.sqft} square feet &nbsp; | &nbsp; ${money(p.price)}</div></div>
   <div class="ag"><span>&#128100; ${p.agent}</span><button onclick="toast('Advice request sent to ${p.agent} (prototype)')">Get Advice NOW</button></div>
   <div class="acts"><button onclick="schedule()">Schedule Visit</button><button onclick="toast('Payments are outside the prototype scope')">Buy Now!</button></div>
   <div class="end">The End</div>`;
@@ -264,7 +268,7 @@ function renderProps() {
   $("#ptb").innerHTML =
     P.map(
       (p) =>
-        `<tr><td>${p.title}</td><td>${p.loc}</td><td>${money(p.price)}</td><td>${p.marla}</td><td><button class="sm b-n" onclick="propForm(${p.id})">Edit</button><button class="sm b-r" onclick="delProp(${p.id})">Delete</button></td></tr>`,
+        `<tr><td>${p.title}</td><td>${p.loc}</td><td>${money(p.price)}</td><td>${areaLabel(p.marla)}</td><td><button class="sm b-n" onclick="propForm(${p.id})">Edit</button><button class="sm b-r" onclick="delProp(${p.id})">Delete</button></td></tr>`,
     ).join("") ||
     "<tr><td colspan=5>No properties yet. Add your first listing.</td></tr>";
 }
