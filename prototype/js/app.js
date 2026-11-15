@@ -64,15 +64,34 @@ function modal(title, fields, ok, okLabel) {
       )
       .join("") +
     `<div class="err" id="me"></div><div class="row"><button onclick="closeM()">Cancel</button><button style="background:var(--gold);color:var(--navy)" id="mok">${okLabel || "Save"}</button></div>`;
+
   $("#ov").classList.add("on");
-  $("#mok").onclick = () => {
+
+  $("#mok").onclick = async () => {
+    const button = $("#mok");
     const v = {};
+
     fields.forEach((f) => (v[f.k] = $("#f_" + f.k).value.trim()));
-    const e = ok(v);
-    if (e) $("#me").textContent = e;
-    else closeM();
+
+    button.disabled = true;
+
+    try {
+      const e = await ok(v);
+
+      if (e) {
+        $("#me").textContent = e;
+      } else {
+        closeM();
+      }
+    } catch (error) {
+      console.error("Modal submission failed:", error);
+      $("#me").textContent = error.message || "Something went wrong.";
+    } finally {
+      button.disabled = false;
+    }
   };
 }
+
 function closeM() {
   $("#ov").classList.remove("on");
 }
@@ -405,41 +424,73 @@ function renderProps() {
     ).join("") ||
     "<tr><td colspan=5>No properties yet. Add your first listing.</td></tr>";
 }
+
 function propForm(id) {
   const p = P.find((x) => x.id == id) || {};
+
+  if (id) {
+    toast("We'll connect editing to the API next.");
+    return;
+  }
+
   modal(
-    id ? "Edit Property" : "Add Property",
+    "Add Property",
     [
-      { k: "title", l: "Title", v: p.title },
-      { k: "loc", l: "Location", v: p.loc },
-      { k: "price", l: "Price ($)", t: "number", v: p.price },
-      { k: "marla", l: "Size (Marla)", t: "number", v: p.marla },
-      { k: "sqft", l: "Square feet", t: "number", v: p.sqft },
+      { k: "title", l: "Property Title" },
+      { k: "address", l: "Street Address" },
+      { k: "city", l: "City" },
+      {
+        k: "propertyType",
+        l: "Property Type",
+        opts: ["residential", "commercial", "industrial", "land", "other"],
+      },
+      {
+        k: "listingType",
+        l: "Listing Type",
+        opts: ["sale", "rent"],
+      },
+      { k: "price", l: "Price (PKR)", t: "number", min: "0" },
+      {
+        k: "pricePeriod",
+        l: "Rent Period",
+        opts: ["daily", "weekly", "monthly", "yearly"],
+      },
     ],
-    (v) => {
-      if (!v.title || !v.loc) return "Title and location are required.";
-      if (!(+v.price > 0) || !(+v.marla > 0))
-        return "Price and size must be positive numbers.";
-      const o = {
+    async (v) => {
+      if (!v.title || !v.address || !v.city)
+        return "Title, address and city are required.";
+
+      if (v.price === "" || !Number.isFinite(+v.price) || +v.price < 0)
+        return "Enter a valid price.";
+
+      const payload = {
+        owner_id: 1,
         title: v.title,
-        loc: v.loc,
+        address: v.address,
+        city: v.city,
+        property_type: v.propertyType,
+        listing_type: v.listingType,
         price: +v.price,
-        marla: +v.marla,
-        sqft: +v.sqft || 0,
+        price_period: v.listingType === "rent" ? v.pricePeriod : null,
       };
-      if (id) Object.assign(p, o);
-      else
-        P.push({
-          id: Date.now(),
-          agent: user ? user.name : "Agent Abdul",
-          ...o,
-        });
-      sv("props", P);
-      renderProps();
-      toast(id ? "Property updated" : "Property added");
+
+      const response = await fetch("/api/properties", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) return result.error || "Could not create property.";
+
+      await loadProperties();
+      toast("Property created successfully!");
     },
+    "Create Property",
   );
 }
+
 function delProp(id) {
   if (!confirm("Delete this property?")) return;
   P = P.filter((p) => p.id != id);
