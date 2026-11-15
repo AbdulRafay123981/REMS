@@ -21,10 +21,20 @@ const role = () => (user ? user.role : null);
 const KEY = (c) =>
   `<svg viewBox="0 0 100 100"><circle cx="66" cy="34" r="20" fill="${c}"/><circle cx="66" cy="34" r="6.5" fill="#fff"/><path d="M53 48 20 82" stroke="${c}" stroke-width="10"/><path d="M27 75l9 9M19 83l9 9" stroke="${c}" stroke-width="7"/></svg>`;
 const pic = (src) => `<img src="${src}" alt="">`;
+
 const gallery = (p) => {
+  if (p.images?.length) {
+    return p.images.map((image) =>
+      image.image_path.startsWith("/")
+        ? image.image_path
+        : `/${image.image_path}`,
+    );
+  }
+
   const f = p.img || IMAGES.gallery[0];
   return [f, ...IMAGES.gallery.filter((x) => x !== f)];
 };
+
 function toast(m) {
   const t = $("#toast");
   t.textContent = m;
@@ -199,14 +209,36 @@ function renderList() {
     : "<p>No properties match your search. Try a different name or price.</p>";
 }
 
-function det(id, g) {
-  cur = P.find((p) => p.id == id);
+async function det(id, g) {
+  const property = P.find((p) => p.id == id);
 
-  if (!cur) {
+  if (!property) {
     toast("Property not found.");
     return;
   }
 
+  if (!property.imagesLoaded) {
+    try {
+      const response = await fetch(`/api/properties/${id}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const details = await response.json();
+
+      Object.assign(property, normalizeProperty(details), {
+        images: details.images || [],
+        imagesLoaded: true,
+      });
+    } catch (error) {
+      console.error("Property detail loading failed:", error);
+      toast("Could not load property details.");
+      return;
+    }
+  }
+
+  cur = property;
   const p = cur;
   const L = gallery(p);
 
