@@ -52,6 +52,26 @@ def fetch_property(property_id):
     finally:
         connection.close()
 
+def fetch_property_images(property_id):
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+
+    try:
+        cursor = connection.execute(
+            """
+            SELECT image_id, image_path, alt_text, display_order, is_cover
+            FROM property_images
+            WHERE property_id = ?
+            ORDER BY is_cover DESC, display_order ASC
+            """,
+            (property_id,),
+        )
+
+        return [dict(row) for row in cursor.fetchall()]
+
+    finally:
+        connection.close()
+
 
 def search_properties(filters):
     query = "SELECT * FROM properties"

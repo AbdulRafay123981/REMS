@@ -63,6 +63,8 @@ def get_property(property_id):
     if property is None:
         return jsonify({"error": "Property not found"}), 404
 
+    property["images"] = db.fetch_property_images(property_id)
+
     return jsonify(property)
 
 
