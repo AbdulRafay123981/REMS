@@ -2,7 +2,7 @@ from pathlib import Path
 
 from flask import Flask
 
-FRONTEND_DIR = Path(__file__).resolve().parents[2] / "prototype"
+FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 
 app = Flask(
     __name__,
