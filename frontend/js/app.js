@@ -117,13 +117,7 @@ function normalizeProperty(p) {
 
 async function loadProperties() {
   try {
-    const response = await fetch("/api/properties");
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const properties = await response.json();
+    const properties = await REMSApi.get("/api/properties");
 
     P = properties.map(normalizeProperty);
 
@@ -238,13 +232,7 @@ async function det(id, g) {
 
   if (!property.imagesLoaded) {
     try {
-      const response = await fetch(`/api/properties/${id}`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const details = await response.json();
+      const details = await REMSApi.get(`/api/properties/${id}`);
 
       Object.assign(property, normalizeProperty(details), {
         images: details.images || [],
@@ -429,15 +417,12 @@ async function propForm(id) {
   let p = {};
 
   if (id) {
-    const response = await fetch(`/api/properties/${id}`);
-    const result = await response.json();
-
-    if (!response.ok) {
-      toast(result.error || "Could not load property.");
+    try {
+      p = await REMSApi.get(`/api/properties/${id}`);
+    } catch (error) {
+      toast(error.message || "Could not load property.");
       return;
     }
-
-    p = result;
   }
 
   modal(
@@ -491,18 +476,15 @@ async function propForm(id) {
 
       if (!id) payload.owner_id = 1;
 
-      const response = await fetch(
-        id ? `/api/properties/${id}` : "/api/properties",
-        {
-          method: id ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) return result.error || "Could not save property.";
+      try {
+        if (id) {
+          await REMSApi.patch(`/api/properties/${id}`, payload);
+        } else {
+          await REMSApi.post("/api/properties", payload);
+        }
+      } catch (error) {
+        return error.message || "Could not save property.";
+      }
 
       await loadProperties();
       toast(
@@ -526,16 +508,7 @@ async function delProp(id) {
   if (!confirm(`Are you sure you want to delete "${property.title}"?`)) return;
 
   try {
-    const response = await fetch(`/api/properties/${id}`, {
-      method: "DELETE",
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      toast(result.error || "Could not delete property.");
-      return;
-    }
+    await REMSApi.delete(`/api/properties/${id}`);
 
     await loadProperties();
     toast("Property deleted successfully!");
