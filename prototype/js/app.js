@@ -75,7 +75,13 @@ function normalizeProperty(p) {
     price: p.price,
     loc: [p.address, p.area, p.city].filter(Boolean).join(", "),
     marla: p.area_marla,
-    sqft: p.area_sqft || 0,
+    sqft: p.area_sqft,
+    bedrooms: p.bedrooms,
+    bathrooms: p.bathrooms,
+    description: p.description,
+    propertyType: p.property_type,
+    listingType: p.listing_type,
+    pricePeriod: p.price_period,
     agent: `Owner #${p.owner_id}`,
   };
 }
@@ -192,21 +198,116 @@ function renderList() {
         .join("")
     : "<p>No properties match your search. Try a different name or price.</p>";
 }
+
 function det(id, g) {
   cur = P.find((p) => p.id == id);
-  const p = cur,
-    L = gallery(p);
+
+  if (!cur) {
+    toast("Property not found.");
+    return;
+  }
+
+  const p = cur;
+  const L = gallery(p);
+
   gi = (((g || 0) % L.length) + L.length) % L.length;
-  $("#detail").innerHTML =
-    `<div class="gal"><div class="im">${pic(L[gi])}</div><div class="im">${pic(L[(gi + 1) % L.length])}</div><button class="gb" style="left:0" onclick="det(${id},${gi - 1})">&larr; Back</button><button class="gb" style="right:0" onclick="det(${id},${gi + 1})">Next &rarr;</button></div>
-  <div class="dt"><h1>${p.title}</h1><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Spacious rooms, natural light and a quiet neighbourhood close to schools and markets.</p></div>
-  <div class="loc">${p.loc}</div>
-  <div class="sq"><div class="marla">${p.marla == null ? "—" : p.marla}<small>${p.marla == null ? "Area not specified" : "Marla"}</small></div><div>${p.sqft} square feet &nbsp; | &nbsp; ${money(p.price)}</div></div>
-  <div class="ag"><span>&#128100; ${p.agent}</span><button onclick="toast('Advice request sent to ${p.agent} (prototype)')">Get Advice NOW</button></div>
-  <div class="acts"><button onclick="schedule()">Schedule Visit</button><button onclick="toast('Payments are outside the prototype scope')">Buy Now!</button></div>
-  <div class="end">The End</div>`;
+
+  const priceLabel =
+    p.listingType === "rent" && p.pricePeriod
+      ? `${money(p.price)} / ${p.pricePeriod}`
+      : money(p.price);
+
+  const facts = [
+    ["Bedrooms", p.bedrooms],
+    ["Bathrooms", p.bathrooms],
+    ["Area", p.marla == null ? null : `${p.marla} Marla`],
+    ["Size", p.sqft ? `${p.sqft} sq ft` : null],
+  ];
+
+  $("#detail").innerHTML = `
+    <div class="detail-page">
+
+      <button class="back-btn" onclick="goHome()">
+        &larr; Back to properties
+      </button>
+
+      <div class="detail-gallery">
+        <img src="${L[gi]}" alt="${p.title}">
+
+        <button class="gallery-btn prev"
+          onclick="det(${id}, ${gi - 1})">&larr;</button>
+
+        <button class="gallery-btn next"
+          onclick="det(${id}, ${gi + 1})">&rarr;</button>
+
+        <span class="photo-count">${gi + 1} / ${L.length}</span>
+      </div>
+
+      <div class="detail-content">
+
+        <div class="detail-heading">
+          <div>
+            <span class="property-type">
+              ${p.propertyType || "Property"}
+              ${p.listingType ? " • " + p.listingType : ""}
+            </span>
+            <h1>${p.title}</h1>
+            <p class="detail-location">${p.loc}</p>
+          </div>
+
+          <div class="detail-price">${priceLabel}</div>
+        </div>
+
+        <section class="detail-section">
+          <h2>Property Overview</h2>
+
+          <div class="property-facts">
+            ${facts
+              .filter((f) => f[1] != null && f[1] !== "")
+              .map(
+                (f) => `
+                  <div class="fact">
+                    <strong>${f[1]}</strong>
+                    <span>${f[0]}</span>
+                  </div>
+                `,
+              )
+              .join("")}
+          </div>
+        </section>
+
+        <section class="detail-section">
+          <h2>Description</h2>
+          <p class="description">
+            ${p.description || "No property description has been provided yet."}
+          </p>
+        </section>
+
+        <section class="agent-info">
+          <div>
+            <strong>Listed by</strong>
+            <span>${p.agent}</span>
+          </div>
+
+          <button onclick="toast('Advice request sent to ${p.agent} (prototype)')">
+            Contact Agent
+          </button>
+        </section>
+
+        <div class="detail-actions">
+          <button onclick="schedule()">Schedule Visit</button>
+          <button onclick="toast('Payments are outside the prototype scope')">
+            Buy Now
+          </button>
+        </div>
+
+      </div>
+    </div>
+  `;
+
   show("detail");
 }
+
 function schedule() {
   if (!user) {
     toast("Please sign in to schedule a visit");
