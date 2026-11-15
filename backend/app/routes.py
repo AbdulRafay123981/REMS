@@ -1,9 +1,8 @@
-import backend.database as db
-from flask import jsonify
+from flask import send_from_directory
 
-from . import app
+from . import FRONTEND_DIR, app
 
 
 @app.route("/")
 def home():
-    return "Welcome to REMS"
+    return send_from_directory(FRONTEND_DIR, "index.html")
