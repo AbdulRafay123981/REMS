@@ -2,5 +2,5 @@
 __pycache__/
 *.py[cod]
 database/rems.db
-prototype/repomix-output.xml
+frontend/repomix-output.xml
 *.db

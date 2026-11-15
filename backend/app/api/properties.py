@@ -263,3 +263,13 @@ def update_property(property_id):
     updated_property = db.fetch_property(property_id)
 
     return jsonify(updated_property), 200
+
+
+@bp.route("/properties/<int:property_id>", methods=["DELETE"])
+def delete_property(property_id):
+    deleted = db.delete_property(property_id)
+
+    if not deleted:
+        return jsonify({"error": "Property not found"}), 404
+
+    return jsonify({"message": "Property deleted successfully"}), 200

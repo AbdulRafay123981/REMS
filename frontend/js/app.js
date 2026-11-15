@@ -515,12 +515,34 @@ async function propForm(id) {
   );
 }
 
-function delProp(id) {
-  if (!confirm("Delete this property?")) return;
-  P = P.filter((p) => p.id != id);
-  sv("props", P);
-  renderProps();
-  toast("Property deleted");
+async function delProp(id) {
+  const property = P.find((p) => p.id == id);
+
+  if (!property) {
+    toast("Property not found.");
+    return;
+  }
+
+  if (!confirm(`Are you sure you want to delete "${property.title}"?`)) return;
+
+  try {
+    const response = await fetch(`/api/properties/${id}`, {
+      method: "DELETE",
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      toast(result.error || "Could not delete property.");
+      return;
+    }
+
+    await loadProperties();
+    toast("Property deleted successfully!");
+  } catch (error) {
+    console.error("Property deletion failed:", error);
+    toast("Could not connect to the server.");
+  }
 }
 
 /* ===== H. AGENT: VISIT MANAGEMENT ===== */

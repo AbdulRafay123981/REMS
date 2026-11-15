@@ -52,6 +52,7 @@ def fetch_property(property_id):
     finally:
         connection.close()
 
+
 def fetch_property_images(property_id):
     connection = get_connection()
     connection.row_factory = sqlite3.Row
@@ -190,6 +191,20 @@ def update_property(property_id, data):
 
     finally:
         connection.close()
+
+
+def delete_property(property_id):
+    connection = get_connection()
+
+    cursor = connection.execute(
+        "DELETE FROM properties WHERE property_id = ?",
+        (property_id,),
+    )
+
+    connection.commit()
+    connection.close()
+
+    return cursor.rowcount > 0
 
 
 if __name__ == "__main__":
