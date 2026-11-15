@@ -59,7 +59,7 @@ function modal(title, fields, ok, okLabel) {
         (f) =>
           `<label>${f.l}</label>` +
           (f.opts
-            ? `<select id="f_${f.k}">${f.opts.map((o) => `<option>${o}</option>`).join("")}</select>`
+            ? `<select id="f_${f.k}">${f.opts.map((o) => `<option ${o === f.v ? "selected" : ""}>${o}</option>`).join("")}</select>`
             : `<input id="f_${f.k}" type="${f.t || "text"}" value="${f.v || ""}" ${f.min ? `min="${f.min}"` : ""}>`),
       )
       .join("") +
@@ -425,34 +425,50 @@ function renderProps() {
     "<tr><td colspan=5>No properties yet. Add your first listing.</td></tr>";
 }
 
-function propForm(id) {
-  const p = P.find((x) => x.id == id) || {};
+async function propForm(id) {
+  let p = {};
 
   if (id) {
-    toast("We'll connect editing to the API next.");
-    return;
+    const response = await fetch(`/api/properties/${id}`);
+    const result = await response.json();
+
+    if (!response.ok) {
+      toast(result.error || "Could not load property.");
+      return;
+    }
+
+    p = result;
   }
 
   modal(
-    "Add Property",
+    id ? "Edit Property" : "Add Property",
     [
-      { k: "title", l: "Property Title" },
-      { k: "address", l: "Street Address" },
-      { k: "city", l: "City" },
+      { k: "title", l: "Property Title", v: p.title || "" },
+      { k: "address", l: "Street Address", v: p.address || "" },
+      { k: "city", l: "City", v: p.city || "" },
       {
         k: "propertyType",
         l: "Property Type",
+        v: p.property_type || "residential",
         opts: ["residential", "commercial", "industrial", "land", "other"],
       },
       {
         k: "listingType",
         l: "Listing Type",
+        v: p.listing_type || "sale",
         opts: ["sale", "rent"],
       },
-      { k: "price", l: "Price (PKR)", t: "number", min: "0" },
+      {
+        k: "price",
+        l: "Price (PKR)",
+        t: "number",
+        min: "0",
+        v: p.price ?? "",
+      },
       {
         k: "pricePeriod",
         l: "Rent Period",
+        v: p.price_period || "monthly",
         opts: ["daily", "weekly", "monthly", "yearly"],
       },
     ],
@@ -464,7 +480,6 @@ function propForm(id) {
         return "Enter a valid price.";
 
       const payload = {
-        owner_id: 1,
         title: v.title,
         address: v.address,
         city: v.city,
@@ -474,20 +489,29 @@ function propForm(id) {
         price_period: v.listingType === "rent" ? v.pricePeriod : null,
       };
 
-      const response = await fetch("/api/properties", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      if (!id) payload.owner_id = 1;
+
+      const response = await fetch(
+        id ? `/api/properties/${id}` : "/api/properties",
+        {
+          method: id ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
 
       const result = await response.json();
 
-      if (!response.ok) return result.error || "Could not create property.";
+      if (!response.ok) return result.error || "Could not save property.";
 
       await loadProperties();
-      toast("Property created successfully!");
+      toast(
+        id
+          ? "Property updated successfully!"
+          : "Property created successfully!",
+      );
     },
-    "Create Property",
+    id ? "Save Changes" : "Create Property",
   );
 }
 
