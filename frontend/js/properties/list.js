@@ -76,7 +76,7 @@ function renderProperties() {
           : `${escapeHTML(property.area_marla)}<small>Marla</small>`;
 
       return `
-      <article class="pc">
+      <a class="pc" href="/property/${property.property_id}">
         <div class="im">
           <img
             src="${escapeHTML(propertyImage(property))}"
@@ -92,7 +92,7 @@ function renderProperties() {
         </div>
 
         <div class="marla">${size}</div>
-      </article>
+      </a>
     `;
     })
     .join("");

@@ -11,3 +11,10 @@ def home():
 @app.route("/properties")
 def properties():
     return send_from_directory(FRONTEND_DIR / "pages", "properties.html")
+
+@app.route("/property/<int:property_id>")
+def property_detail(property_id):
+    return send_from_directory(
+        FRONTEND_DIR,
+        "pages/property-detail.html"
+    )
