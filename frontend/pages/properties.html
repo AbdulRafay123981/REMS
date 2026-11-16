@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Urban Key - Properties</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Italiana&family=Lato:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header id="nav">
+      <div class="logo">Urban Key <i id="lk"></i></div>
+
+      <div id="mid">
+        <a class="pill act" href="/properties">Properties</a>
+      </div>
+
+      <div id="who">Visitor</div>
+    </header>
+
+    <main>
+      <section id="home" class="screen on">
+        <div class="hero">
+          <img class="himg" src="/images/porch-house.jpg" alt="" />
+
+          <input
+            id="q"
+            type="search"
+            placeholder="Search by name or location"
+          />
+
+          <h1>Find the Best<br />Properties</h1>
+        </div>
+
+        <div class="wrap">
+          <h2>Trending:</h2>
+
+          <div class="filters">
+            <select id="pmax">
+              <option value="">Any price</option>
+              <option value="5000000">Up to 50 lakh</option>
+              <option value="10000000">Up to 1 crore</option>
+              <option value="20000000">Up to 2 crore</option>
+              <option value="30000000">Up to 3 crore</option>
+            </select>
+
+            <select id="msz">
+              <option value="">Any size</option>
+              <option value="5">5 Marla+</option>
+              <option value="10">10 Marla+</option>
+            </select>
+          </div>
+
+          <div class="grid" id="list">
+            <p>Loading properties...</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="end">Find a place to call home.</footer>
+
+    <script src="/js/core/api.js"></script>
+    <script src="/js/properties/list.js"></script>
+  </body>
+</html>
