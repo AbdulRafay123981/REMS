@@ -21,6 +21,43 @@ def db_init():
     finally:
         connection.close()
 
+def _fetch_user(query, value):
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+
+    try:
+        row = connection.execute(query, (value,)).fetchone()
+
+        if row is None:
+            return None
+
+        user = dict(row)
+
+        roles = connection.execute(
+            "SELECT role FROM user_roles WHERE user_id = ?",
+            (user["user_id"],),
+        ).fetchall()
+
+        user["roles"] = [role["role"] for role in roles]
+
+        return user
+
+    finally:
+        connection.close()
+
+
+def fetch_user_by_id(user_id):
+    return _fetch_user(
+        "SELECT * FROM users WHERE user_id = ? AND is_active = 1",
+        user_id,
+    )
+
+
+def fetch_user_by_email(email):
+    return _fetch_user(
+        "SELECT * FROM users WHERE email = ? COLLATE NOCASE AND is_active = 1",
+        email,
+    )
 
 def fetch_table(table_name):
     connection = get_connection()

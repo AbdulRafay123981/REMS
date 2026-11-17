@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Urban Key - Sign In</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Italiana&family=Lato:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+
+  <body>
+    <header>
+      <a class="logo" href="/" style="text-decoration: none;">Urban Key 
+        <i>
+          <svg viewBox="0 0 100 100">
+            <circle cx="66" cy="34" r="20" fill="#0f2a44"/>
+            <circle cx="66" cy="34" r="6.5" fill="#fff"/>
+            <path d="M53 48 20 82" stroke="#0f2a44" stroke-width="10"/>
+            <path d="M27 75l9 9M19 83l9 9" stroke="#0f2a44" stroke-width="7"/>
+          </svg>
+        </i>
+      </a>
+
+      <div id="mid">
+        <a class="pill" href="/properties">Properties</a>
+        <a class="pill act" href="/login">Sign In</a>
+        <a class="pill" href="/register">Sign Up</a>
+      </div>
+
+      <div id="who">Visitor</div>
+    </header>
+
+    <main>
+      <section class="screen on">
+        <div class="authbg">
+          <div class="card">
+            <h2>Sign In</h2>
+
+            <input
+              id="email"
+              type="email"
+              placeholder="Email Address"
+              autocomplete="email"
+            />
+
+            <input
+              id="password"
+              type="password"
+              placeholder="Password"
+              autocomplete="current-password"
+            />
+
+            <div class="err" id="login-error"></div>
+
+            <button class="gbtn" id="login-submit" type="button">
+              Sign In
+            </button>
+
+            <a href="/forgot-password">Forgot Password?</a>
+            <a href="/register">Don't have an account?</a>
+          </div>
+
+          <div class="welcometxt">Welcome<br />Back!</div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

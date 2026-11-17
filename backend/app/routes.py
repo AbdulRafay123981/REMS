@@ -18,3 +18,7 @@ def property_detail(property_id):
         FRONTEND_DIR,
         "pages/property-detail.html"
     )
+
+@app.route("/login")
+def login():
+    return send_from_directory(FRONTEND_DIR / "pages", "login.html")
