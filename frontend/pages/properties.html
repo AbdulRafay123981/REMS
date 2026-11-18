@@ -13,7 +13,17 @@
   </head>
   <body>
     <header id="nav">
-      <div class="logo">Urban Key <i id="lk"></i></div>
+      <div class="logo">Urban Key
+
+        <i>
+          <svg viewBox="0 0 100 100">
+            <circle cx="66" cy="34" r="20" fill="#0f2a44"/>
+            <circle cx="66" cy="34" r="6.5" fill="#fff"/>
+            <path d="M53 48 20 82" stroke="#0f2a44" stroke-width="10"/>
+            <path d="M27 75l9 9M19 83l9 9" stroke="#0f2a44" stroke-width="7"/>
+          </svg>
+        </i>
+      </div>
 
       <div id="mid">
         <a class="pill act" href="/properties">Properties</a>
@@ -65,6 +75,7 @@
     <footer class="end">Find a place to call home.</footer>
 
     <script src="/js/core/api.js"></script>
+    <script src="/js/core/auth.js"></script>
     <script src="/js/properties/list.js"></script>
   </body>
 </html>
