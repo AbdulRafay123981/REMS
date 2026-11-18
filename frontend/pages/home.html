@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Urban Key</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Italiana&family=Lato:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+
+    <style>
+      #welcome {
+        min-height: 100vh;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 50px 20px;
+        background: #fff;
+      }
+
+      #welcome h3 {
+        margin: 0;
+        font-size: 30px;
+      }
+
+      #welcome h1 {
+        margin: 0 0 30px;
+        font: 400 clamp(60px, 10vw, 110px) var(--display);
+      }
+
+      .keybtn {
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        border: 4px solid var(--navy);
+        background: #fff;
+        display: inline-grid;
+        place-items: center;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+
+      .keybtn:hover {
+        background: var(--gold);
+      }
+
+      .keybtn svg {
+        width: 120px;
+      }
+
+      #welcome p {
+        margin-top: 22px;
+        text-decoration: underline;
+        font-weight: 300;
+      }
+    </style>
+  </head>
+
+  <body>
+    <main id="welcome">
+      <h3>Welcome to:</h3>
+      <h1>Urban Key</h1>
+
+      <button
+        class="keybtn"
+        onclick="window.location.href='/login'"
+        aria-label="Sign in to Urban Key"
+      >
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="66" cy="34" r="20" fill="#0f2a44" />
+          <circle cx="66" cy="34" r="6.5" fill="#fff" />
+          <path d="M53 48 20 82" stroke="#0f2a44" stroke-width="10" />
+          <path d="M27 75l9 9M19 83l9 9" stroke="#0f2a44" stroke-width="7" />
+        </svg>
+      </button>
+
+      <p>Press Key to Sign In/Up</p>
+    </main>
+  </body>
+</html>
+

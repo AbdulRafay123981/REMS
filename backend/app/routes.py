@@ -2,10 +2,13 @@ from flask import send_from_directory
 
 from . import FRONTEND_DIR, app
 
+@app.route("/prototype")
+def prototype():
+    return send_from_directory(FRONTEND_DIR, "index.html")
 
 @app.route("/")
 def home():
-    return send_from_directory(FRONTEND_DIR, "index.html")
+    return send_from_directory(FRONTEND_DIR / "pages", "home.html")
 
 
 @app.route("/properties")
