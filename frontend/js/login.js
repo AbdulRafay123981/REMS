@@ -19,9 +19,7 @@ form.addEventListener("submit", async (event) => {
     });
 
     await REMSAuth.refresh();
-
-    errorBox.textContent = `Welcome back, ${user.name}!`;
-    errorBox.style.color = "green";
+    window.location.assign("/properties");
   } catch (error) {
     errorBox.textContent = error.message;
     errorBox.style.color = "";

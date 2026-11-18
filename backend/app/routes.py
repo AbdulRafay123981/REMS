@@ -22,3 +22,7 @@ def property_detail(property_id):
 @app.route("/login")
 def login():
     return send_from_directory(FRONTEND_DIR / "pages", "login.html")
+
+@app.route("/register")
+def register():
+    return send_from_directory(FRONTEND_DIR / "pages", "register.html")

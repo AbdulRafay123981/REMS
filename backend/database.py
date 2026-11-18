@@ -59,6 +59,39 @@ def fetch_user_by_email(email):
         email,
     )
 
+
+def create_user(full_name, email, password_hash):
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            """
+            INSERT INTO users (full_name, email, password_hash)
+            VALUES (?, ?, ?)
+            """,
+            (full_name, email, password_hash),
+        )
+
+        user_id = cursor.lastrowid
+
+        connection.execute(
+            """
+            INSERT INTO user_roles (user_id, role)
+            VALUES (?, 'buyer')
+            """,
+            (user_id,),
+        )
+
+        connection.commit()
+        return user_id
+
+    except Exception:
+        connection.rollback()
+        raise
+
+    finally:
+        connection.close()
+
 def fetch_table(table_name):
     connection = get_connection()
     connection.row_factory = sqlite3.Row
