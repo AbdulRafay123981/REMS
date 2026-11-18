@@ -1,0 +1,282 @@
+import sqlite3
+from pathlib import Path
+
+BASE_PATH = Path(__file__).resolve().parent.parent
+DB_PATH = BASE_PATH / "database" / "rems.db"
+SCHEMA_PATH = BASE_PATH / "database" / "schema.sql"
+
+schema = SCHEMA_PATH.read_text()
+
+
+def get_connection():
+    connection = sqlite3.connect(DB_PATH)
+    connection.execute("PRAGMA foreign_keys = ON")
+    return connection
+
+
+def db_init():
+    connection = get_connection()
+    try:
+        connection.executescript(schema)
+    finally:
+        connection.close()
+
+def _fetch_user(query, value):
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+
+    try:
+        row = connection.execute(query, (value,)).fetchone()
+
+        if row is None:
+            return None
+
+        user = dict(row)
+
+        roles = connection.execute(
+            "SELECT role FROM user_roles WHERE user_id = ?",
+            (user["user_id"],),
+        ).fetchall()
+
+        user["roles"] = [role["role"] for role in roles]
+
+        return user
+
+    finally:
+        connection.close()
+
+
+def fetch_user_by_id(user_id):
+    return _fetch_user(
+        "SELECT * FROM users WHERE user_id = ? AND is_active = 1",
+        user_id,
+    )
+
+
+def fetch_user_by_email(email):
+    return _fetch_user(
+        "SELECT * FROM users WHERE email = ? COLLATE NOCASE AND is_active = 1",
+        email,
+    )
+
+
+def create_user(full_name, email, password_hash):
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            """
+            INSERT INTO users (full_name, email, password_hash)
+            VALUES (?, ?, ?)
+            """,
+            (full_name, email, password_hash),
+        )
+
+        user_id = cursor.lastrowid
+
+        connection.execute(
+            """
+            INSERT INTO user_roles (user_id, role)
+            VALUES (?, 'buyer')
+            """,
+            (user_id,),
+        )
+
+        connection.commit()
+        return user_id
+
+    except Exception:
+        connection.rollback()
+        raise
+
+    finally:
+        connection.close()
+
+def fetch_table(table_name):
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+
+    try:
+        cursor = connection.execute(f"select * from {table_name}")
+        rows = cursor.fetchall()
+        properties = []
+
+        for row in rows:
+            properties.append(dict(row))
+        return properties
+
+    finally:
+        connection.close()
+
+
+def fetch_property(property_id):
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+    try:
+        cursor = connection.execute(
+            "select * from properties where property_id = ?", (property_id,)
+        )
+        row = cursor.fetchone()
+
+        return dict(row) if row else None
+    finally:
+        connection.close()
+
+
+def fetch_property_images(property_id):
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+
+    try:
+        cursor = connection.execute(
+            """
+            SELECT image_id, image_path, alt_text, display_order, is_cover
+            FROM property_images
+            WHERE property_id = ?
+            ORDER BY is_cover DESC, display_order ASC
+            """,
+            (property_id,),
+        )
+
+        return [dict(row) for row in cursor.fetchall()]
+
+    finally:
+        connection.close()
+
+
+def search_properties(filters):
+    query = "SELECT * FROM properties"
+    conditions = []
+    values = []
+
+    if filters.get("city"):
+        conditions.append("city LIKE ?")
+        values.append(f"%{filters['city']}%")
+
+    if filters.get("property_type"):
+        conditions.append("property_type = ?")
+        values.append(filters["property_type"])
+
+    if filters.get("listing_type"):
+        conditions.append("listing_type = ?")
+        values.append(filters["listing_type"])
+
+    if filters.get("min_price") is not None:
+        conditions.append("price >= ?")
+        values.append(filters["min_price"])
+
+    if filters.get("max_price") is not None:
+        conditions.append("price <= ?")
+        values.append(filters["max_price"])
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    connection = get_connection()
+    connection.row_factory = sqlite3.Row
+
+    try:
+        cursor = connection.execute(query, values)
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        connection.close()
+
+
+def insert_property(data):
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            """
+            INSERT INTO properties (
+                owner_id, title, property_type, listing_type,
+                price, price_period, address, city
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                data["owner_id"],
+                data["title"],
+                data["property_type"],
+                data["listing_type"],
+                data["price"],
+                data.get("price_period"),
+                data["address"],
+                data["city"],
+            ),
+        )
+
+        connection.commit()
+        return cursor.lastrowid
+
+    finally:
+        connection.close()
+
+
+def update_property(property_id, data):
+    allowed_fields = (
+        "title",
+        "description",
+        "property_type",
+        "listing_type",
+        "price",
+        "price_period",
+        "area_marla",
+        "area_sqft",
+        "bedrooms",
+        "bathrooms",
+        "address",
+        "area",
+        "city",
+        "province",
+        "postal_code",
+        "latitude",
+        "longitude",
+    )
+
+    fields = [field for field in data if field in allowed_fields]
+
+    if not fields:
+        return False
+
+    set_clause = ", ".join(f"{field} = ?" for field in fields)
+
+    values = [data[field] for field in fields]
+    values.extend([property_id])
+
+    connection = get_connection()
+
+    try:
+        cursor = connection.execute(
+            f"""
+            UPDATE properties
+            SET {set_clause}, updated_at = CURRENT_TIMESTAMP
+            WHERE property_id = ?
+            """,
+            values,
+        )
+
+        connection.commit()
+        return cursor.rowcount > 0
+
+    finally:
+        connection.close()
+
+
+def delete_property(property_id):
+    connection = get_connection()
+
+    cursor = connection.execute(
+        "DELETE FROM properties WHERE property_id = ?",
+        (property_id,),
+    )
+
+    connection.commit()
+    connection.close()
+
+    return cursor.rowcount > 0
+
+
+if __name__ == "__main__":
+    db_init()
+    print(fetch_table("properties"))

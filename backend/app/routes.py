@@ -1,0 +1,31 @@
+from flask import send_from_directory
+
+from . import FRONTEND_DIR, app
+
+@app.route("/prototype")
+def prototype():
+    return send_from_directory(FRONTEND_DIR, "index.html")
+
+@app.route("/")
+def home():
+    return send_from_directory(FRONTEND_DIR / "pages", "home.html")
+
+
+@app.route("/properties")
+def properties():
+    return send_from_directory(FRONTEND_DIR / "pages", "properties.html")
+
+@app.route("/property/<int:property_id>")
+def property_detail(property_id):
+    return send_from_directory(
+        FRONTEND_DIR,
+        "pages/property-detail.html"
+    )
+
+@app.route("/login")
+def login():
+    return send_from_directory(FRONTEND_DIR / "pages", "login.html")
+
+@app.route("/register")
+def register():
+    return send_from_directory(FRONTEND_DIR / "pages", "register.html")

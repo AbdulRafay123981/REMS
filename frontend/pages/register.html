@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Urban Key - Sign Up</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Italiana&family=Lato:wght@300;400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header>
+      <a class="logo" href="/" style="text-decoration: none;">
+        Urban Key
+        <i>
+          <svg viewBox="0 0 100 100">
+            <circle cx="66" cy="34" r="20" fill="#0f2a44"/>
+            <circle cx="66" cy="34" r="6.5" fill="#fff"/>
+            <path d="M53 48 20 82" stroke="#0f2a44" stroke-width="10"/>
+            <path d="M27 75l9 9M19 83l9 9" stroke="#0f2a44" stroke-width="7"/>
+          </svg>
+        </i>
+      </a>
+
+      <div id="mid">
+        <a class="pill" href="/properties">Properties</a>
+        <a class="pill" href="/login">Sign In</a>
+        <a class="pill act" href="/register">Sign Up</a>
+      </div>
+
+      <div id="who">Visitor</div>
+    </header>
+
+    <main>
+      <section class="screen on">
+        <div class="authbg">
+          <form class="card" id="register-form">
+            <h2>Sign Up</h2>
+
+            <input
+              id="full-name"
+              type="text"
+              placeholder="Full Name"
+              autocomplete="name"
+              required
+            />
+
+            <input
+              id="email"
+              type="email"
+              placeholder="Email Address"
+              autocomplete="email"
+              required
+            />
+
+            <input
+              id="password"
+              type="password"
+              placeholder="Password (minimum 8 characters)"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            />
+
+            <input
+              id="confirm-password"
+              type="password"
+              placeholder="Confirm Password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            />
+
+            <div class="err" id="register-error"></div>
+
+            <button class="gbtn" id="register-submit" type="submit">
+              Create Account
+            </button>
+
+            <a href="/login">Already have an account? Sign In</a>
+          </form>
+
+          <div class="welcometxt">Find Your<br />Place!</div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/js/core/api.js"></script>
+    <script src="/js/core/auth.js"></script>
+    <script src="/js/register.js"></script>
+  </body>
+</html>
